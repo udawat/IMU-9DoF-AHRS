@@ -9243,27 +9243,19 @@ Source: http://www.osram.convergy.de/</description>
 <text x="30.48" y="208.28" size="1.778" layer="97">(3.3V to 5.5V)</text>
 <wire x1="5.08" y1="167.64" x2="139.7" y2="167.64" width="0.1524" layer="94" style="shortdash"/>
 <wire x1="139.7" y1="167.64" x2="139.7" y2="215.9" width="0.1524" layer="94" style="shortdash"/>
-<text x="210.82" y="185.42" size="1.778" layer="97">FSync pin output to MPU-9150</text>
 <text x="119.38" y="205.74" size="1.778" layer="97">@300mA</text>
 <text x="121.92" y="38.1" size="1.778" layer="97">-&gt; Rx-in to FT232 IC's Rx d</text>
 <text x="121.92" y="35.56" size="1.778" layer="97">&lt;- Tx-out from FT232 IC's Tx d</text>
 <text x="193.04" y="195.58" size="2.54" layer="97">Pins to be used:</text>
 <text x="193.04" y="190.5" size="1.778" layer="97">1.) Sleep_RQ of xBee to send it Dozing/hibernating</text>
-<text x="193.04" y="185.42" size="1.778" layer="97">2.) FSync ?</text>
 <text x="193.04" y="180.34" size="1.778" layer="97">3.) INT interrupt pin of MPU-9150</text>
 <text x="193.04" y="175.26" size="1.778" layer="97">4.) CTS of xBee</text>
 <text x="193.04" y="167.64" size="1.778" layer="97">5.) RSSI Strength Indicator - connect to Digital Pin
 PWM Pin of Arduino - pulseIn()</text>
 <text x="193.04" y="165.1" size="1.778" layer="97">Or, instead, in API Mode, RSSI Data is present</text>
-<text x="193.04" y="160.02" size="1.778" layer="97">6.) Auxillary SDA, SCL Pins</text>
-<text x="193.04" y="152.4" size="1.778" layer="97">Solder jumpers b/w RSSI, CTS, etc. pins
-for user inout/outputs/applications</text>
-<text x="86.36" y="2.54" size="1.778" layer="97">switch to interchange tx and rx signals
-for connection of FTDI as well as Pro Mini</text>
 <text x="195.58" y="134.62" size="1.778" layer="97">can program either ATmega328 or xBee</text>
 <text x="195.58" y="144.78" size="1.778" layer="97">two different ports for FTDI programming -
 xBee and ATmega328</text>
-<text x="195.58" y="139.7" size="1.778" layer="97">no xBee programming</text>
 <text x="193.04" y="203.2" size="1.778" layer="97">Breakout some analog and digitl pins</text>
 <text x="193.04" y="129.54" size="1.778" layer="97">7.) RGB LEDs for status</text>
 <text x="167.64" y="106.68" size="1.778" layer="94">PWM</text>
@@ -9791,21 +9783,12 @@ xBee and ATmega328</text>
 <sheet>
 <plain>
 <text x="139.7" y="38.1" size="1.778" layer="97">This Pin is asserted with SLEEP_RQ</text>
-<text x="220.98" y="101.6" size="1.778" layer="97">1683680 - 10uF/10V/X7R/1206</text>
-<text x="220.98" y="96.52" size="1.778" layer="97">1853550 - 10uF/25V/X7R/1206</text>
-<text x="193.04" y="96.52" size="1.778" layer="97">from ArduBoard</text>
-<wire x1="215.9" y1="101.6" x2="215.9" y2="91.44" width="0.1524" layer="97"/>
-<text x="220.98" y="91.44" size="1.778" layer="97">1907318 - 2x 0.1uF/50V/X7R/0603</text>
-<text x="60.96" y="137.16" size="1.778" layer="97">1520256 - 2.2nF/0603/50V/X7R</text>
 <text x="111.76" y="116.84" size="1.778" layer="95">MPU-9150</text>
-<text x="33.02" y="142.24" size="1.778" layer="97">1650834 - 0.1uF/0603/16V/X7R</text>
 <wire x1="223.52" y1="210.82" x2="223.52" y2="170.18" width="0.1524" layer="94" style="longdash"/>
 <wire x1="223.52" y1="170.18" x2="274.32" y2="170.18" width="0.1524" layer="94" style="longdash"/>
 <wire x1="276.86" y1="88.9" x2="187.96" y2="88.9" width="0.1524" layer="94" style="shortdash"/>
 <wire x1="187.96" y1="88.9" x2="187.96" y2="170.18" width="0.1524" layer="94" style="shortdash"/>
 <wire x1="187.96" y1="170.18" x2="223.52" y2="170.18" width="0.1524" layer="94" style="shortdash"/>
-<text x="139.7" y="48.26" size="1.778" layer="97">for Programming with FTDI</text>
-<text x="43.18" y="53.34" size="1.778" layer="97">connect by default?</text>
 <wire x1="187.96" y1="88.9" x2="187.96" y2="86.36" width="0.1524" layer="94" style="shortdash"/>
 <wire x1="187.96" y1="86.36" x2="187.96" y2="35.56" width="0.1524" layer="94" style="shortdash"/>
 <wire x1="187.96" y1="35.56" x2="274.32" y2="35.56" width="0.1524" layer="94" style="shortdash"/>
@@ -9814,13 +9797,14 @@ xBee and ATmega328</text>
 <text x="226.06" y="208.28" size="2.54" layer="94">Pull-Ups</text>
 <text x="7.62" y="81.28" size="2.54" layer="94">xBee</text>
 <wire x1="5.08" y1="86.36" x2="187.96" y2="86.36" width="0.1524" layer="94" style="longdash"/>
-<text x="45.72" y="167.64" size="1.778" layer="97">5V supply</text>
 <text x="17.78" y="185.42" size="1.778" layer="94">GPS_Rx</text>
 <text x="17.78" y="182.88" size="1.778" layer="94">GPS_Tx</text>
 <text x="5.08" y="177.8" size="1.778" layer="94">Directive/Status</text>
-<text x="226.06" y="81.28" size="1.778" layer="97">Cut Slot around this sensor to
+<text x="226.06" y="81.28" size="1.778" layer="97">Design Note:
+Cut Slot around this sensor to
 prevent heat transfer from copper</text>
 <text x="266.7" y="7.62" size="2.54" layer="94">1</text>
+<text x="175.26" y="27.94" size="2.54" layer="94">CC-by-SA 3.0</text>
 </plain>
 <instances>
 <instance part="FRAME2" gate="G$1" x="0" y="0"/>
