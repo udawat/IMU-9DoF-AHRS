@@ -50,6 +50,7 @@
  * 
  * This simple sketch will demo the following:
  * Sensor readings coming out of the serial port of ATmega328 at 57600 bps.
+ * Baud rate of receiver xBee, if used, should also be set to 57600 bps.
  * An example of how to use the quaternion data to generate standard aircraft orientation data in the form of
  * Tait-Bryan angles representing the sensor yaw, pitch, and roll angles suitable for any vehicle stablization control application.
  * Here, Sebastian Madgwick's Filter is used as shown on: http://www.x-io.co.uk/open-source-imu-and-ahrs-algorithms/
@@ -58,7 +59,7 @@
  * 
  * Development environment specifics:
  * 	IDE: Arduino 1.0.6
- * 	Hardware Platform: IMU 9DoF AHRS (ATmega328 @ 8MHz running at 3.3V)
+ * 	Hardware Platform: IMU 9DoF AHRS (ATmega328 @ 3.3V running at 8MHz)
  * 
  *****************************************************************/
 
@@ -103,6 +104,10 @@ uint16_t lastUpdate = 0; // used to calculate integration interval
 uint16_t now = 0;        // used to calculate integration interval
 
 #define LED_PIN 13       // LED connected on-board on pin 13
+#define userLED 5        // user programmable LED connected on-board on pin 5.
+                         // Here, it is turned ON if Relative Humidity is above 50%
+#define gpsLED 8         // LED for GPS 1PPS output connected on-board on pin 8.
+                         // Can also be used as a user programmable LED when no GPS module connected.
 bool blinkState = false; // LED blink for activity
 
 int16_t a1, a2, a3, g1, g2, g3, m1, m2, m3;     // raw data arrays reading
@@ -263,34 +268,20 @@ void loop() {
   // applied in the correct order which for this configuration is yaw, pitch, and then roll.
   // For more see http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles which has additional links.
   yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);   
-  pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
+  pitch = asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
   roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
   pitch *= 180.0f / PI;
   yaw   *= 180.0f / PI;
   roll  *= 180.0f / PI;
 
+  /* Calculated non-compensated heading with compass lying flat on surface.
   heading = atan2(my, mx);
-  // Correct for when signs are reversed. Will output heading in 0 to 360 degrees.
+  //  Correct for when signs are reversed. Will output heading in 0 to 360 degrees.
   if(heading < 0)
     heading += 2*PI;
-    
-  // Below is a non-working calculation for getting tilt-compensated heading in degrees.
-  /*  Yh = my * cos(roll) - mz * sin(roll);
-  Xh = mx * cos(pitch) + my * sin(pitch) * sin(roll) + mz * sin(pitch) * cos(roll);
-  heading = atan2(Yh, Xh);// * (360.0 / (2*PI));
-  if(heading < 0)
-    heading += 2*PI;
-  
-  float declinationAngle = 0.0128;
-  heading += declinationAngle;
-  if(heading > M_PI)
-  heading -= 2 * M_PI;
-  else if(heading < -M_PI)
-  heading += 2 * M_PI;
-  else if(heading < 0)
-  heading += 2 * M_PI;  
   */
   
+  heading = tiltCompensatedHeading(ax, ay, mx, my, mz);
   // pressure = myPressure.readPressure();
   altitude = myPressure.readAltitude();
   temp1 = myPressure.readTemp();
@@ -499,6 +490,54 @@ void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, fl
   q[3] = q4 * norm;
 }
 
+/*
+From https://www.loveelectronics.co.uk/Tutorials/13/tilt-compensated-compass-arduino-tutorial
+and https://github.com/landis/arduino/blob/master/tiltcompass/tiltcompass.ino
+*/
+float tiltCompensatedHeading(float aX, float aY, float mX, float mY, float mZ) {   
+  // Another technique for tilt compensation ~40 degrees
+  // Configure this for your setup.
+  float accX = aY; // or -ay;
+  float accY = aX;
+  
+  float rollRadians = asin(accY);
+  float pitchRadians = asin(accX);
+  
+  // We cannot correct for tilt over 40 degrees with this algorthem, if the board is tilted as such, return 0.
+  if(rollRadians > 0.78 || rollRadians < -0.78 || pitchRadians > 0.78 || pitchRadians < -0.78)
+  {
+    return 0;
+  }
+  
+  // Some of these are used twice, so rather than computing them twice in the algorithem we precompute them before hand.
+  float cosRoll = cos(rollRadians);
+  float sinRoll = sin(rollRadians);  
+  float cosPitch = cos(pitchRadians);
+  float sinPitch = sin(pitchRadians);
+  
+  float Xh = mX * cosPitch + mZ * sinPitch;
+  float Yh = mX * sinRoll * sinPitch + mY * cosRoll - mZ * sinRoll * cosPitch;
+  
+  heading = atan2(Yh, Xh);
+  return heading;
+  }
+
+float RadiansToDegrees(float rads)
+{
+  // Correct for when signs are reversed.
+  if(rads < 0)
+    rads += 2*PI;
+      
+  // Check for wrap due to addition of declination.
+  if(rads > 2*PI)
+    rads -= 2*PI;
+   
+  // Convert radians to degrees for readability.
+  float heading = rads * 180/PI;
+       
+  return heading;
+}
+
 void printSensorReadings() {
   Serial.print("$,");
   Serial.print(yaw, 2);
@@ -507,7 +546,7 @@ void printSensorReadings() {
   Serial.print(",");
   Serial.print(roll, 2);
   Serial.print(",");
-  Serial.print(heading * 180/M_PI, 0);
+  Serial.print(RadiansToDegrees(heading), 0);
   Serial.print(",");  
   Serial.print(altitude, 0);
   Serial.print(",");
@@ -519,6 +558,9 @@ void printSensorReadings() {
   // Blink LED to show activity.
   blinkState = !blinkState;
   digitalWrite(LED_PIN, blinkState);
+  
+  if (humidity > 50.0)
+    digitalWrite(userLED, HIGH);
+  else
+    digitalWrite(userLED, LOW);
 }
-
-
