@@ -54,22 +54,24 @@
  * An example of how to use the quaternion data to generate standard aircraft orientation data in the form of
  * Tait-Bryan angles representing the sensor yaw, pitch, and roll angles suitable for any vehicle stablization control application.
  * Here, Sebastian Madgwick's Filter is used as shown on: http://www.x-io.co.uk/open-source-imu-and-ahrs-algorithms/
- * Output Format: $,Yaw,Pitch,Roll,Heading,Altutde,Humidity,Temperature#
+ * 
+ * Output Format: $,Yaw,Pitch,Roll,Heading,Altitude,Humidity,Temperature#
  * Future Software Support for Latitude, Longitude and other important GPS data.
  * 
  * Development environment specifics:
- * 	IDE: Arduino 1.0.6
+ * 	IDE: Arduino 1.6.4
  * 	Hardware Platform: IMU 9DoF AHRS (ATmega328 @ 3.3V running at 8MHz)
- * 
+ *                         http://www.explorelabs.com/imu-9-dof-ahrs-with-pressure-altitude-humidity-temperature-sensor
+ *
  *****************************************************************/
 
 // Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
 // is used in I2Cdev.h
 #include "Wire.h"
-// I2Cdev and MPU6050 must be installed as libraries, or else the .cpp/.h files
+// I2Cdev and MPU9150 must be installed as libraries, or else the .cpp/.h files
 // for both classes must be in the include path of your project
 #include "I2Cdev.h"
-#include "MPU6050_9Axis_MotionApps41.h"
+#include "MPU9150.h"
 #include "MPL3115A2.h"
 #include "HTU21D.h"
 
@@ -77,8 +79,8 @@
 // specific I2C addresses may be passed as a parameter here
 // AD0 low = 0x68 (default for InvenSense evaluation board)
 // AD0 high = 0x69
-// Declare device MPU6050 class
-MPU6050 mpu;
+// Declare device MPU9150 class
+MPU9150 mpu;
 MPL3115A2 myPressure; // Create instance for Pressure sensor - MPL3115A2
 HTU21D myHumidity; // Create instance for Humidity sensor - HTU21D
 
@@ -121,7 +123,7 @@ float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};    // vector to hold quaternion
 float eInt[3] = {0.0f, 0.0f, 0.0f};       // vector to hold integral error for Mahony method
 float Xh, Yh, heading;  // Heading from North in degrees
 
-float altitude, temp1, temp2, temperature, humidity; // Sensor readings
+float alt, temp1, temp2, temperature, humidity; // Sensor readings
 float pressure; // for setModeBarometer() function.
 
 void setup() {
@@ -136,7 +138,8 @@ void setup() {
   
   // initialize devices
   Serial.println("Initializing I2C devices...");
-  mpu.initialize();  // Get various sensors online
+  // Get various sensors online
+  mpu.initialize();
   myPressure.begin();
   myHumidity.begin();
 
@@ -152,12 +155,12 @@ void setup() {
 
   // verify connection
   Serial.println("Testing device connections...");
-  Serial.println(mpu.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+  Serial.println(mpu.testConnection() ? "MPU9150 connection successful" : "MPU9150 connection failed");
 
   // Set up the accelerometer, gyro, and magnetometer for data output
   mpu.setRate(7); // set gyro rate to 8 kHz/(1 * rate) shows 1 kHz, accelerometer ODR is fixed at 1 KHz
   
-  MagRate = 10; // set magnetometer read rate in Hz; 10 to 100 (max) Hz are reasonable values
+  MagRate = 100; // set magnetometer read rate in Hz; 10 to 100 (max) Hz are reasonable values
 // Digital low pass filter configuration. 
 // It also determines the internal sampling rate used by the device as shown in the table below.
 // The accelerometer output rate is fixed at 1kHz. This means that for a Sample
@@ -189,6 +192,8 @@ void setup() {
 
   // configure on-board LED for showing activity
   pinMode(LED_PIN, OUTPUT);
+  pinMode(userLED, OUTPUT);
+  pinMode(gpsLED, OUTPUT);
   Serial.println("IMU 9 DoF AHRS ready. Wait for a few seconds to get stable Yaw readings.");
 }
 
@@ -241,13 +246,13 @@ void loop() {
   // MahonyQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, my, mx, mz);
 
   // Uncomment the below to view Raw readings.
-  /*
-   Serial.print("ax = "); Serial.print((int)1000*ax);  
+  
+ /*  Serial.print("ax = "); Serial.print((int)1000*ax);  
    Serial.print(" ay = "); Serial.print((int)1000*ay); 
-   Serial.print(" az = "); Serial.print((int)1000*az); Serial.println(" mg");
+   Serial.print(" az = "); Serial.print((int)1000*az); //Serial.println(" mg");
    Serial.print("gx = "); Serial.print( gx, 2); 
    Serial.print(" gy = "); Serial.print( gy, 2); 
-   Serial.print(" gz = "); Serial.print( gz, 2); Serial.println(" deg/s");
+   Serial.print(" gz = "); Serial.print( gz, 2); //Serial.println(" deg/s");
    Serial.print("mx = "); Serial.print( (int)mx ); 
    Serial.print(" my = "); Serial.print( (int)my ); 
    Serial.print(" mz = "); Serial.print( (int)mz ); Serial.println(" mG");
@@ -256,7 +261,7 @@ void loop() {
    Serial.print(" qx = "); Serial.print(q[1]); 
    Serial.print(" qy = "); Serial.print(q[2]); 
    Serial.print(" qz = "); Serial.println(q[3]); 
-   */
+ */  
 
   // Define output variables from updated quaternion---these are Tait-Bryan angles, commonly used in aircraft orientation.
   // In this coordinate system, the positive z-axis is down toward Earth. 
@@ -283,7 +288,7 @@ void loop() {
   
   heading = tiltCompensatedHeading(ax, ay, mx, my, mz);
   // pressure = myPressure.readPressure();
-  altitude = myPressure.readAltitude();
+  alt = myPressure.readAltitude();
   temp1 = myPressure.readTemp();
   humidity = myHumidity.readHumidity();
   // temp2 = myHumidity.readTemperature();
@@ -548,7 +553,7 @@ void printSensorReadings() {
   Serial.print(",");
   Serial.print(RadiansToDegrees(heading), 0);
   Serial.print(",");  
-  Serial.print(altitude, 0);
+  Serial.print(alt, 0);
   Serial.print(",");
   Serial.print(humidity, 0);
   Serial.print(",");  
@@ -558,7 +563,7 @@ void printSensorReadings() {
   // Blink LED to show activity.
   blinkState = !blinkState;
   digitalWrite(LED_PIN, blinkState);
-  
+  // User LED demo code
   if (humidity > 50.0)
     digitalWrite(userLED, HIGH);
   else
