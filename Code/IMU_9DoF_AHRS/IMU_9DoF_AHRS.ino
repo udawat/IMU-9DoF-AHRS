@@ -193,7 +193,7 @@ void setup() {
   // configure on-board LED for showing activity
   pinMode(LED_PIN, OUTPUT);
   pinMode(userLED, OUTPUT);
-  pinMode(gpsLED, OUTPUT);
+  // pinMode(gpsLED, OUTPUT); // should not be defined as the GPS module would loose GPS Fix.
   Serial.println("IMU 9 DoF AHRS ready. Wait for a few seconds to get stable Yaw readings.");
 }
 
